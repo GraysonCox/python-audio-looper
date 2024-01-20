@@ -1,3 +1,5 @@
+"""This file contains the Looper class."""
+
 import pyaudio
 import numpy as np
 
@@ -12,6 +14,10 @@ from model.track import Track
 
 
 class Looper:
+    """
+    Controls all looping and what not.
+    """
+
     def __init__(self, state, tracks):
         self.state = state
         self.tracks = tracks

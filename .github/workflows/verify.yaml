@@ -1,0 +1,14 @@
+---
+
+name: Verify
+
+"on": [push]
+
+jobs:
+  pylint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: scottbrenner/cfn-lint-action@v2
+      - run: pip3 install -r requirements.txt
+      - run: pylint src/

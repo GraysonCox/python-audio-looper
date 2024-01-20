@@ -27,7 +27,9 @@ class Looper:
             output_device_index=1,
             frames_per_buffer=CHUNK_SIZE,
             start=True,
-            stream_callback=lambda in_data, _1, _2, _3: self._looping_callback(in_data),
+            stream_callback=lambda in_data, frame_count, _2, _3: self._looping_callback(
+                in_data, frame_count
+            ),
         )
 
     def toggle_recording(self):
@@ -60,10 +62,10 @@ class Looper:
         self.looping_stream.close()
         self.pa.terminate()
 
-    def _looping_callback(self, in_data):
+    def _looping_callback(self, in_data, frame_count):
         # Do nothing if EMPTY.
         if self.state.status == Status.EMPTY:
-            return (np.zeros([CHUNK_SIZE], dtype=np.int16), pyaudio.paContinue)
+            return (np.zeros([frame_count], dtype=np.int16), pyaudio.paContinue)
 
         # Do recording if desired.
         if self.state.status in [
@@ -76,11 +78,9 @@ class Looper:
 
         # Get desired audio for output.
         if self.state.status in [Status.PLAYING, Status.RECORDING_SUBSEQUENT_TRACK]:
-            output_chunk = self.tracks[0].audio[
-                self.state.current_chunk : self.state.current_chunk + CHUNK_SIZE
-            ]
+            output_chunk = self.tracks[0].audio[self.state.current_chunk]
         else:
-            output_chunk = np.zeros([CHUNK_SIZE], dtype=np.int16)
+            output_chunk = np.zeros([frame_count], dtype=np.int16)
 
         # Increment counter.
         self.state.current_chunk = (

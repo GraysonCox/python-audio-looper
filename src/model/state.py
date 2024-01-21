@@ -14,3 +14,4 @@ class State:
     status = Status.EMPTY
     current_chunk = 0
     last_chunk = MAX_CHUNKS_PER_TRACK - 1
+    num_tracks_used = 0

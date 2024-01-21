@@ -42,8 +42,12 @@ class Looper:
             self.state.status = Status.PLAYING
             self.state.last_chunk = self.state.current_chunk
             self.state.current_chunk = 0
+            self.state.num_tracks_used = 1
         elif self.state.status == Status.PLAYING:
-            self.state.status = Status.RECORDING_FIRST_TRACK  # TODO: Add new state.
+            self.state.status = Status.RECORDING_SUBSEQUENT_TRACK
+        elif self.state.status == Status.RECORDING_SUBSEQUENT_TRACK:
+            self.state.status = Status.PLAYING
+            self.state.num_tracks_used += 1
 
     def clear(self):
         """
@@ -72,13 +76,15 @@ class Looper:
             Status.RECORDING_FIRST_TRACK,
             Status.RECORDING_SUBSEQUENT_TRACK,
         ]:
-            self.tracks[0].audio[self.state.current_chunk, :] = np.copy(
-                np.frombuffer(in_data, dtype=np.int16)
-            )
+            recorded_chunk = np.copy(np.frombuffer(in_data, dtype=np.int16))
+            self.tracks[self.state.num_tracks_used].audio[self.state.current_chunk] = recorded_chunk
 
         # Get desired audio for output.
         if self.state.status in [Status.PLAYING, Status.RECORDING_SUBSEQUENT_TRACK]:
-            output_chunk = self.tracks[0].audio[self.state.current_chunk]
+            output_chunk = np.copy(self.tracks[0].audio[self.state.current_chunk])
+            for track in range(1, self.state.num_tracks_used):
+                for i in range(0, frame_count):
+                    output_chunk[i] += self.tracks[track].audio[self.state.current_chunk][i]
         else:
             output_chunk = np.zeros([frame_count], dtype=np.int16)
 
@@ -86,4 +92,5 @@ class Looper:
         self.state.current_chunk = (
             self.state.current_chunk + 1
         ) % self.state.last_chunk
+
         return (output_chunk, pyaudio.paContinue)
